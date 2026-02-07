@@ -481,9 +481,9 @@ All requirements met with margin for performance growth.
 
 ## Related Documents
 
-- [Design Document](./DESIGN.md#dependency-injection-strategy) - Architectural overview
-- [Requirements Document](./REQUIREMENTS.md#fr-6-dependency-injection-container-setup) - DI requirements
-- [Architecture Analysis](./ARCHITECTURE_ANALYSIS.md) - Overall architecture assessment
+- [Design Document](../DESIGN.md#dependency-injection-strategy) - Architectural overview
+- [Requirements Document](../REQUIREMENTS.md#fr-6-dependency-injection-container-setup) - DI requirements
+- [Architecture Analysis](../ARCHITECTURE_ANALYSIS.md) - Overall architecture assessment
 
 ---
 

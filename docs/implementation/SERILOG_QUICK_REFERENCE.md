@@ -15,7 +15,7 @@
 
 ## Side-by-Side Comparison
 
-See the detailed comparison in [docs/LOGGING_LIBRARY_ANALYSIS.md](docs/LOGGING_LIBRARY_ANALYSIS.md).
+See the detailed comparison in [LOGGING_LIBRARY_ANALYSIS.md](../assessments/LOGGING_LIBRARY_ANALYSIS.md).
 
 ---
 

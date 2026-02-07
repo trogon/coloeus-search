@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using MassifCentral.Lib.Logging;
+using MassifCentral.Lib.Services;
 using MassifCentral.Lib.Utilities;
 
 namespace MassifCentral.Lib;
@@ -30,6 +31,12 @@ public static class ServiceCollectionExtensions
         // Register correlation ID enricher as singleton
         // Used for distributed tracing across service boundaries
         services.AddSingleton<CorrelationIdEnricher>();
+
+        // Register Large File Analyzer Service with file-based cache storage
+        // Scoped lifetime: new instance per logical operation/scope
+        // Each scope gets fresh cache with no cross-request contamination
+        services.AddScoped<ICacheStorage, FileCacheStorage>();
+        services.AddScoped<ILargeFileAnalyzerService, LargeFileAnalyzerService>();
 
         // Note: ILogger (SerilogLoggerAdapter) is registered in Program.cs after Serilog initialization
         // This ensures proper logging context throughout the application

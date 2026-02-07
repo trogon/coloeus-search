@@ -14,9 +14,9 @@ This document summarizes all changes and implementations in MassifCentral v1.1.0
 
 | Document | v1.0.0 | v1.1.0 | Status |
 |----------|--------|--------|--------|
-| [DESIGN.md](./DESIGN.md) | Initial design | Added DI strategy section, Phase implementation roadmap | ✅ Updated |
-| [REQUIREMENTS.md](./REQUIREMENTS.md) | Basic requirements | Added FR-6 DI requirement, marked DI as COMPLETED | ✅ Updated |
-| [ARCHITECTURE_ANALYSIS.md](./ARCHITECTURE_ANALYSIS.md) | Initial analysis | Notes DI as first pattern adopted | ✅ Updated |
+| [DESIGN.md](../DESIGN.md) | Initial design | Added DI strategy section, Phase implementation roadmap | ✅ Updated |
+| [REQUIREMENTS.md](../REQUIREMENTS.md) | Basic requirements | Added FR-6 DI requirement, marked DI as COMPLETED | ✅ Updated |
+| [ARCHITECTURE_ANALYSIS.md](../ARCHITECTURE_ANALYSIS.md) | Initial analysis | Notes DI as first pattern adopted | ✅ Updated |
 | [DEPENDENCY_INJECTION.md](./DEPENDENCY_INJECTION.md) | N/A | **NEW** - Complete DI implementation guide | ✅ Created |
 
 ---
@@ -458,10 +458,10 @@ The project is now positioned for scalable growth with maintainable, testable co
 ## Files Reference
 
 ### Documentation
-- [Design Document](./DESIGN.md) - v1.1.0
-- [Requirements Document](./REQUIREMENTS.md) - v1.1.0
+- [Design Document](../DESIGN.md) - v1.1.0
+- [Requirements Document](../REQUIREMENTS.md) - v1.1.0
 - [Dependency Injection Guide](./DEPENDENCY_INJECTION.md) - v1.0.0
-- [Architecture Analysis](./ARCHITECTURE_ANALYSIS.md) - v1.1.0
+- [Architecture Analysis](../ARCHITECTURE_ANALYSIS.md) - v1.1.0
 
 ### Source Code
 - [ServiceCollectionExtensions.cs](../src/MassifCentral.Lib/ServiceCollectionExtensions.cs)

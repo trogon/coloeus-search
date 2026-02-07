@@ -46,7 +46,7 @@ The current structure is a simple two-tier architecture and lacks explicit layer
 
 ## Conclusion
 
-The current architecture is appropriate for the project's scope. For a detailed assessment of whether formal architectural patterns like CLEAN architecture should be adopted, see [ARCHITECTURE_ASSESSMENT.md](assessments/ARCHITECTURE_ASSESSMENT.md), which includes recommendations and analysis of potential architectural adaptations.
+The current architecture is appropriate for the project's scope. For a detailed assessment of whether formal architectural patterns like CLEAN architecture should be adopted, see [ARCHITECTURE_ASSESSMENT.md](./assessments/ARCHITECTURE_ASSESSMENT.md), which includes recommendations and analysis of potential architectural adaptations.
 
 ---
 

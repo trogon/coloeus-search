@@ -1,9 +1,9 @@
 # MassifCentral - Technology Stack & Techniques Document
 
 ## Version Control
-- **Version:** 1.0.0
+- **Version:** 1.2.0
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Initial technology stack documentation with platform, languages, frameworks, and architectural patterns
+- **Change Summary:** Updated logging and DI stack details to reflect Serilog implementation
 
 ---
 
@@ -87,7 +87,7 @@ public string? OptionalString { get; set; }
   - Automatic NuGet restore
 
 #### Solution Organization
-- **Format:** Visual Studio 2022 compatible (.sln)
+- **Format:** Visual Studio 2022 compatible (.slnx)
 - **Projects:** 3 (.csproj files)
   - Console application
   - Class library
@@ -118,13 +118,13 @@ Derived types can substitute base types without breaking contracts:
 
 #### Interface Segregation Principle (ISP)
 Clients depend only on interfaces they use:
-- Logger provides minimal static interface
-- Future: `ILogger` interface for dependency injection
+- `ILogger` interface provides a narrow logging surface
+- Serilog adapter implements the interface for DI-friendly usage
 
 #### Dependency Inversion Principle (DIP)
 Depend on abstractions, not concretions:
 - Console application depends on library abstractions
-- Future: Replace static Logger with injected ILogger
+- Logging depends on `ILogger` abstraction with adapter-backed implementation
 
 ### Design Patterns
 
@@ -133,7 +133,7 @@ Used for `Logger` and `Constants`:
 - No instance creation required
 - Direct access with type names
 - Appropriate for utility functions
-- Future: Will migrate to dependency injection
+- Logger remains for backward compatibility; DI uses `ILogger` + Serilog adapter
 
 #### Template Method Pattern
 Enabled through `BaseEntity` inheritance:
@@ -198,7 +198,7 @@ MassifCentral.Tests             // Unit tests
 - **Properties:** PascalCase (e.g., `CreatedAt`, `IsActive`)
 - **Local variables:** camelCase (e.g., `entity`, `timestamp`)
 - **Constants:** UPPER_SNAKE_CASE in static classes (e.g., `ApplicationName`)
-- **Interfaces:** Prefix with "I" (e.g., `ILogger` - future)
+- **Interfaces:** Prefix with "I" (e.g., `ILogger`)
 - **Abstract classes:** Base prefix or Suffix Abstract (e.g., `BaseEntity`)
 
 ## Code Quality Practices
@@ -230,9 +230,16 @@ For comprehensive coding standards and guidelines, including documentation, form
 | Package | Version | Purpose |
 |---------|---------|---------|
 | .NET Base Class Library | Included | Core framework |
+| `Serilog` | 4.0.0 | Structured logging core |
+| `Serilog.Sinks.Console` | 6.0.0 | Console logging sink |
+| `Serilog.Sinks.File` | 5.0.0 | Rolling file sink |
+| `Serilog.Extensions.Logging` | 8.0.0 | Microsoft logging integration |
+| `Serilog.Formatting.Compact` | 3.0.0 | Compact JSON formatting |
+| `Serilog.Enrichers.Environment` | 3.0.0 | Environment enrichment |
+| `Serilog.Enrichers.Process` | 3.0.0 | Process enrichment |
+| `Serilog.Enrichers.Thread` | 4.0.0 | Thread enrichment |
 
 #### Future Dependencies (Planned)
-- **Logging:** Serilog or Microsoft.Extensions.Logging
 - **Dependency Injection:** Microsoft.Extensions.DependencyInjection
 - **Configuration:** Microsoft.Extensions.Configuration
 - **Database:** Entity Framework Core

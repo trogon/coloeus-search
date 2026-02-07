@@ -85,7 +85,7 @@ MassifCentral/
 │   ├── LOGGING_LIBRARY_ANALYSIS.md       (Logging library evaluation)
 │   └── SERILOG_IMPLEMENTATION_GUIDE.md   (Implementation reference)
 │
-├── MassifCentral.sln                     (Solution file)
+├── MassifCentral.slnx                    (Solution file)
 └── README.md                             (Project overview)
 ```
 

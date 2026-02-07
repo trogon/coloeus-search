@@ -1,9 +1,9 @@
 # MassifCentral - Design Document
 
 ## Version Control
-- **Version:** 1.1.0
+- **Version:** 1.2.0
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Implemented Dependency Injection infrastructure with Microsoft.Extensions.DependencyInjection; refactored Logger to ILogger interface; added ServiceCollectionExtensions for service registration; updated Program.cs to use DI container
+- **Change Summary:** Implemented Serilog structured logging framework replacing simple console logger. Added SerilogConfiguration with environment-specific sink strategies (production/diagnostic/development modes). Created CorrelationIdEnricher for distributed tracing. Added SerilogLoggerAdapter implementing ILogger interface for backward compatibility. Expanded ILogger with Debug, Trace, and structured logging methods. Added comprehensive integration tests for Serilog sink configurations. Updated MockLogger to capture all log levels and provide helper methods for test assertions.
 
 ---
 
@@ -53,7 +53,7 @@ MassifCentral follows a layered architecture pattern designed for maintainabilit
 MassifCentral/
 ├── src/
 │   ├── MassifCentral.Console/
-│   │   ├── Program.cs                    (Entry point)
+│   │   ├── Program.cs                    (Entry point with Serilog initialization)
 │   │   └── MassifCentral.Console.csproj
 │   │
 │   └── MassifCentral.Lib/
@@ -61,18 +61,29 @@ MassifCentral/
 │       ├── Models/
 │       │   └── BaseEntity.cs             (Base domain entity class)
 │       ├── Utilities/
-│       │   └── Logger.cs                 (Logging utility)
+│       │   └── Logger.cs                 (ILogger interface and Logger class, deprecated)
+│       ├── Logging/ (NEW in v1.2.0)
+│       │   ├── SerilogConfiguration.cs   (Environment-specific Serilog setup)
+│       │   ├── CorrelationIdEnricher.cs  (Distributed tracing support)
+│       │   └── SerilogLoggerAdapter.cs   (ILogger adapter using Serilog)
+│       ├── ServiceCollectionExtensions.cs
 │       └── MassifCentral.Lib.csproj
 │
 ├── tests/
 │   └── MassifCentral.Tests/
-│       ├── UnitTest1.cs                  (Library unit tests)
+│       ├── LibraryTests.cs               (Library unit tests)
+│       ├── LoggerTests.cs                (Logger interface tests)
+│       ├── SerilogIntegrationTests.cs    (NEW in v1.2.0, Serilog integration)
+│       ├── Mocks/
+│       │   └── MockLogger.cs             (Enhanced mock logger for testing)
 │       ├── xunit.runner.json
 │       └── MassifCentral.Tests.csproj
 │
 ├── docs/
 │   ├── REQUIREMENTS.md                   (Project requirements)
-│   └── DESIGN.md                         (This document)
+│   ├── DESIGN.md                         (This document)
+│   ├── LOGGING_LIBRARY_ANALYSIS.md       (Logging library evaluation)
+│   └── SERILOG_IMPLEMENTATION_GUIDE.md   (Implementation reference)
 │
 ├── MassifCentral.sln                     (Solution file)
 └── README.md                             (Project overview)
@@ -124,80 +135,199 @@ MassifCentral/
 - Add version property for optimistic concurrency
 - Add soft delete implementation in repositories
 
-### 3. Logger Utility (MassifCentral.Lib.Utilities.Logger)
+### 3. Logging Framework (Serilog) - NEW in v1.2.0
 
-**Purpose:** Provide simple, consistent logging across the application.
+**Purpose:** Provide structured, searchable logging with environment-specific sink configurations for traceability and observability.
 
 **Design:**
-- Static class providing static methods
-- No configuration required for basic usage
-- UTC timestamps for log consistency
-- Console output for local execution
+- Serilog structured logging framework implementation
+- ILogger abstraction maintaining backward compatibility
+- SerilogLoggerAdapter implementing ILogger interface
+- Environment-specific sink strategies
+- Correlation ID enrichment for distributed tracing
+- JSON output format for machine readability and searching
+
+**Configuration Modes:**
+
+**Production Mode (Default)**
+- Console Sink: Errors only
+- File Sink: Rolling file capturing warnings and errors (daily rolling)
+- Minimum Level: Information (debug filtered out)
+- Retention: 30 days of daily log files
+
+**Diagnostic Mode** (Set DIAGNOSTIC_MODE=true)
+- Single File Sink: All log levels (Trace through Error)
+- Rolling Interval: Hourly
+- Retention: 6-hour window (6 files kept)
+- Minimum Level: Verbose (all levels captured)
+- Use Case: Troubleshooting production issues
+
+**Development Mode** (DOTNET_ENVIRONMENT=Development)
+- Console Sink: All levels with colors
+- File Sink: Rolling file with all levels
+- Minimum Level: Debug
+- Retention: 7 days of daily files
+
+**Components:**
+- `SerilogConfiguration.cs` - Static class with environment-specific configs
+- `CorrelationIdEnricher.cs` - Adds operation tracking IDs to logs
+- `SerilogLoggerAdapter.cs` - Adapts Serilog to ILogger interface
+- `ILogger` interface - Expanded with Debug, Trace, structured logging
+
+**Enrichers:**
+- FromLogContext - Context-based properties
+- WithEnvironmentUserName - Operating system user
+- WithMachineName - Machine hostname
+- WithProcessId - Process ID
+- WithThreadId - Thread ID
+- CorrelationIdEnricher - Operation correlation ID (custom)
+
+**Structured Logging Example:**
+```csharp
+logger.LogInfo("User {UserId} created order {OrderId} for {Amount:C}", 
+    userId: 123, 
+    orderId: "ORD-456", 
+    amount: 99.99);
+```
+Output (JSON):
+```json
+{
+  "@t": "2026-02-07T14:23:45Z",
+  "@mt": "User {UserId} created order {OrderId} for {Amount:C}",
+  "UserId": 123,
+  "OrderId": "ORD-456",
+  "Amount": 99.99,
+  "MachineName": "WORKSTATION-01",
+  "ProcessId": 1234
+}
+```
 
 **Methods:**
+- `LogTrace(string message)` - Detailed diagnostic tracing
+- `LogDebug(string message)` - Debug-level messages
 - `LogInfo(string message)` - Informational messages
-- `LogWarning(string message)` - Warning conditions
-- `LogError(string message)` - Error messages
-- `LogError(string message, Exception ex)` - Errors with exceptions
+- `LogWarning(string message)` - Warnings
+- `LogError(string message)` - Errors
+- `LogError(string message, Exception exception)` - Errors with exceptions
+- Structured variants with template and properties for all levels
 
-**Current Implementation:**
-- Console.WriteLine output to STDOUT
-- Timestamp format: `yyyy-MM-dd HH:mm:ss`
-- Log level prefixes: `[INFO]`, `[WARNING]`, `[ERROR]`
+**Backward Compatibility:**
+- Old Logger class (deprecated) remains functional
+- SerilogLoggerAdapter implements ILogger interface
+- Program.cs registers adapter for dependency injection
+- Existing code using ILogger continues to work unchanged
 
-**Future Enhancements:**
-- Abstract `ILogger` interface for dependency injection
-- Multiple output targets (file, syslog, cloud)
-- Configurable log levels
-- Structured logging support
-- Log filtering and sampling
+### 4. Correlation ID Enricher (NEW in v1.2.0)
 
-### 4. Console Application (MassifCentral.Console)
-
-**Purpose:** Entry point and orchestration of application startup and shutdown.
+**Purpose:** Track operations across service boundaries for distributed tracing.
 
 **Design:**
-- Simple entry point in Program.cs
-- Demonstrates library component usage
-- Structured exception handling
-- Graceful error recovery
+- Implements ILogEventEnricher interface
+- Uses LogContext for context-aware property storage
+- Automatic generation of unique operation IDs
+- Thread-safe context propagation
+
+**Methods:**
+- `SetCorrelationId(string correlationId)` - Explicitly set ID
+- `GetOrCreateCorrelationId()` - Get existing or generate new
+- `Enrich(LogEvent logEvent, ILogEventPropertyFactory factory)` - Enrichment implementation
+
+**Use Case:**
+```csharp
+// Entry point
+var correlationId = CorrelationIdEnricher.GetOrCreateCorrelationId();
+GetService1();  // All logs automatically include correlationId
+GetService2();  // Tracing across multiple services
+```
+
+### 5. ILogger Interface (EXPANDED in v1.2.0)
+
+**Purpose:** Define logging contract for dependency injection and structured logging.
+
+**Design:**
+- Abstraction layer for logging implementation
+- Overloaded methods supporting structured templates
+- Support for all severity levels
+- Exception detail capture
+
+**Methods (v1.2.0):**
+- `LogTrace(string msg)` / `LogTrace(template, params)`
+- `LogDebug(string msg)` / `LogDebug(template, params)`
+- `LogInfo(string msg)` / `LogInfo(template, params)`
+- `LogWarning(string msg)` / `LogWarning(template, params)`
+- `LogError(string msg)` / `LogError(msg, exception)` / `LogError(template, exception, params)`
+
+### 6. Console Application (MassifCentral.Console)
+
+**Purpose:** Entry point and orchestration of application startup and shutdown with Serilog logging initialization.
+
+**Design (v1.2.0):**
+- Serilog initialization before host creation
+- Host builder with UseSerilog()
+- Dependency injection configuration for logging
+- Structured error handling with logging
+- Graceful shutdown with Log.CloseAndFlush()
 
 **Responsibilities:**
-- Initialize application with logging
-- Execute business logic (placeholder)
-- Handle exceptions at application level
-- Log shutdown status
+- Initialize Serilog based on environment
+- Create Host with DI container
+- Register core services including SerilogLoggerAdapter
+- Register CorrelationIdEnricher for distributed tracing
+- Execute business logic
+- Log startup, initialization, and completion
+- Handle exceptions with full logging
+- Cleanup logging resources on shutdown
+
+**Startup Flow (v1.2.0):**
+1. **Serilog Log.Logger initialization** (App startup, before everything)
+2. **Host.CreateDefaultBuilder()** - Create host with logging
+3. **UseSerilog()** - Integrate Serilog with host logging
+4. **ConfigureServices()** - Register MassifCentral services
+5. **Register SerilogLoggerAdapter** - Implement ILogger interface
+6. **Resolve logger from DI** - GetRequiredService<ILogger>()
+7. **Structured logging** - Use ILogger with templated messages and properties
+8. **Execute application logic**
+9. **Log.CloseAndFlush()** - Ensure all logs written before exit
+10. **Return appropriate exit code** (0 for success, 1 for error)
 
 **Extension Strategy:**
 - Add command-line argument parsing
 - Add configuration file loading
-- Add dependency injection container setup
-- Add service registration
+- Add diagnostic mode toggle
+- Add application-specific service registration
 
 ## SOLID Principles Application
 
 ### Single Responsibility Principle (SRP)
 - **Constants** class - Only manages global constants
-- **Logger** class - Only handles logging concerns
+- **SerilogConfiguration** - Only handles environment-specific Serilog setup (NEW)
+- **CorrelationIdEnricher** - Only manages operation correlation tracking (NEW)
+- **SerilogLoggerAdapter** - Only adapts Serilog ILogger to application ILogger (NEW)
+- **ILogger interface** - Only defines logging contract
 - **BaseEntity** class - Only provides base entity functionality
 - **Program.cs** - Only orchestrates application startup/shutdown
 
 ### Open/Closed Principle (OCP)
 - **BaseEntity** - Open for extension (inheritance), closed for modification
-- **Logger** - Can be extended to ILogger interface for implementation variation
+- **SerilogConfiguration** - Open for new environment configurations (methods)
+- **ILogger** - Open for new implementations (SerilogLoggerAdapter, Logger), closed for modification
 - **Models namespace** - New entities can be added without modifying existing code
 
 ### Liskov Substitution Principle (LSP)
 - **BaseEntity subclasses** - Must maintain the contract of a valid entity
-- Can be used anywhere BaseEntity is expected without breaking behavior
+- **SerilogLoggerAdapter** - Can substitute for any ILogger expectation
+- Can be used anywhere ILogger is expected without breaking behavior
 
 ### Interface Segregation Principle (ISP)
-- **Future Logger interface** will be minimum interface required
+- **ILogger interface** - Minimum required logging methods (no unused methods)
+- **ILogEventEnricher interface** - Single Enrich method (Serilog requirement)
 - Clients only depend on methods they use
 
 ### Dependency Inversion Principle (DIP)
-- **Console application** depends on Logger static API (future: ILogger abstraction)
-- Low-level modules (Logger) don't depend on high-level modules directly
+- **Console application** depends on ILogger abstraction (not concrete Logger)
+- **Program.cs** depends on ILogger interface registered in DI container
+- **Services** depend on ILogger interface, not implementation
+- Low-level logging module (Serilog) abstracted via ILogger interface
 
 ## Testing Strategy
 
@@ -205,7 +335,25 @@ MassifCentral/
 - Individual class functionality
 - Library constants verification
 - BaseEntity initialization and properties
-- Logger output format validation
+- ILogger interface and adapter functionality
+- MockLogger capture and assertion methods
+
+### Integration Test Scope (NEW in v1.2.0)
+- Serilog configuration creation
+- Sink file creation and content validation
+- Production mode sink configuration (console errors, file warnings/errors)
+- Diagnostic mode sink configuration (6-hour rolling, all levels)
+- Development mode sink configuration (console all, file backup)
+- Structured logging property inclusion
+- Exception logging with stack traces
+- Correlation ID enrichment
+- Environment variable-based configuration selection
+
+### Test Classes (v1.2.0)
+- **LoggerTests** - ILogger interface and Logger class tests
+- **LibraryTests** - Library constants and BaseEntity tests
+- **SerilogIntegrationTests** (NEW) - Serilog configuration and sink behavior tests
+- **MockLogger** - Capture mechanism with helper methods
 
 ### Test Framework
 - **Framework:** xUnit v3
@@ -213,23 +361,84 @@ MassifCentral/
 - **Namespace:** MassifCentral.Tests
 
 ### Test Structure
-- **Test Classes:** One per component (LibraryTests)
+- **Test Classes:** One per component (LoggerTests, LibraryTests, SerilogIntegrationTests)
 - **Test Methods:** Named with Arrange-Act-Assert pattern
 - **Coverage Goal:** >= 80% for all public APIs
+- **Cleanup:** IDisposable for test artifact cleanup (log files)
 
 ## Data Flow
 
-### Application Startup Flow
+### Application Startup Flow (v1.2.0 with Serilog)
 
-1. **Program.cs Main() executes**
-2. **Logger.LogInfo()** - Log startup message with Constants.ApplicationName
-3. **Try block** - Execute application logic
-4. **Logger.LogInfo()** - Log initialization success
-5. **Console.WriteLine()** - Display welcome message
-6. **Catch block** - Handle exceptions
-7. **Logger.LogError()** - Log error details
-8. **Finally block** - Log completion
-9. **Environment.Exit()** - Exit with appropriate code
+1. **Program.cs entry point executes**
+2. **Serilog Log.Logger initialization** - Creates static logger based on environment
+3. **Host.CreateDefaultBuilder()** - Builds DI container
+4. **.UseSerilog()** - Integrates Serilog with framework logging
+5. **.ConfigureServices()** - Registers application services
+6. **Register SerilogLoggerAdapter** - Maps ILogger interface to Serilog
+7. **Try block begins** - Application execution
+8. **Resolve ILogger** from dependency injection container
+9. **LogInfo()** - Structured logging: "Starting {ApplicationName} v{Version}"
+   - Serilog Log.Logger outputs as JSON to configured sinks
+   - SerilogConfiguration determines sink targets (console, file, or diagnostic)
+10. **LogInfo()** - "Application initialized successfully"
+11. **Business logic executes**
+12. **LogInfo()** - "Application completed successfully"
+13. **Catch block** - Exception caught at application level
+14. **Log.Fatal()** - Serilog fatal error with exception details
+15. **Return exit code** - 1 for error, 0 for success
+16. **Finally block** - Log.CloseAndFlush() ensures all logs written
+17. **Application exits** - Clean termination with flushed logs
+
+### Environment-Based Sink Selection
+
+```
+Environment Variable Check
+    │
+    ├─ DIAGNOSTIC_MODE=true? 
+    │  └─ Use Diagnostic Configuration
+    │     └─ Single file, 6-hour window, all levels
+    │
+    └─ Check DOTNET_ENVIRONMENT
+       │
+       ├─ "Development"
+       │  └─ Use Development Configuration
+       │     └─ Console (all levels) + File
+       │
+       └─ "Production" or "Staging" (Default)
+          └─ Use Production Configuration
+             └─ Console (errors only) + File (warnings/errors)
+```
+
+### Structured Logging Data Flow
+
+```
+LogInfo("User {UserId} logged in", 123)
+    │
+    ├─ String template parsing: "User {UserId} logged in"
+    ├─ Property binding: UserId = 123
+    │
+    ├─ Enrichment chain:
+    │  ├─ FromLogContext (Correlation ID)
+    │  ├─ WithEnvironmentUserName (OS user)
+    │  ├─ WithMachineName (Hostname)
+    │  ├─ WithProcessId (Process ID)
+    │  └─ WithThreadId (Thread ID)
+    │
+    ├─ Sink dispatch:
+    │  ├─ Console sink (if configured)
+    │  └─ File sink (if configured)
+    │
+    └─ Output (JSON format):
+       {
+         "@t": "2026-02-07T14:23:45Z",
+         "@mt": "User {UserId} logged in",
+         "UserId": 123,
+         "MachineName": "WORKSTATION-01",
+         "ProcessId": 1234,
+         "CorrelationId": "550e8400-..."
+       }
+```
 
 ### Entity Creation Flow
 

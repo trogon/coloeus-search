@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using MassifCentral.Lib.Logging;
 using MassifCentral.Lib.Utilities;
 
 namespace MassifCentral.Lib;
@@ -11,7 +12,8 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Adds MassifCentral application services to the service collection.
-    /// Registers core logging and utility services with appropriate lifetimes.
+    /// Includes infrastructure services and registers core logging and utility services with appropriate lifetimes.
+    /// Note: ILogger is registered in Program.cs via SerilogLoggerAdapter after Serilog initialization.
     /// </summary>
     /// <param name="services">The service collection to register services in.</param>
     /// <returns>The service collection for method chaining.</returns>
@@ -25,9 +27,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddMassifCentralServices(
         this IServiceCollection services)
     {
-        // Register core logging service as singleton
-        // Logger is thread-safe and stateless, so singleton is appropriate
-        services.AddSingleton<ILogger, Logger>();
+        // Register correlation ID enricher as singleton
+        // Used for distributed tracing across service boundaries
+        services.AddSingleton<CorrelationIdEnricher>();
+
+        // Note: ILogger (SerilogLoggerAdapter) is registered in Program.cs after Serilog initialization
+        // This ensures proper logging context throughout the application
 
         // TODO: Register repository services
         // services.AddScoped<IUserRepository, UserRepository>();
@@ -41,3 +46,4 @@ public static class ServiceCollectionExtensions
         return services;
     }
 }
+

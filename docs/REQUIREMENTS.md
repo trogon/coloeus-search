@@ -1,9 +1,9 @@
 # MassifCentral - Project Requirements Document
 
 ## Version Control
-- **Version:** 1.1.0
+- **Version:** 1.2.0
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Restructured requirements into 3 functional (business-level) and 7 technical (implementation) requirements. Reclassified FR-4 and FR-5 as Technical Requirements TR-6 and TR-7. Implemented dependency injection framework (Microsoft.Extensions.DependencyInjection). Added traceability matrix, user stories, acceptance criteria, and Non-Functional Requirements section.
+- **Change Summary:** Implemented Serilog structured logging framework with environment-specific sink configurations. Production mode: Console errors only + rolling file for warnings/errors. Diagnostic mode: Single file with 6-hour retention (all levels). Added correlation ID enrichment for distributed tracing. Added structured logging with properties for enhanced searchability and traceability. Expanded ILogger interface with Debug, Trace, and structured logging methods. Created SerilogLoggerAdapter maintaining backward compatibility.
 
 ---
 
@@ -96,22 +96,31 @@ These technical requirements specify how the functional requirements are fulfill
 - Constants.cs (application identification)
 - Models/BaseEntity.cs (entity base class)
 
-### TR-3: Abstraction-Based Logging Framework
+### TR-3: Abstraction-Based Logging Framework with Serilog
 **Supports:** FR-3, FR-5  
-**Implementation Status:** ✅ COMPLETED (v1.1.0)
+**Implementation Status:** ✅ COMPLETED (v1.2.0)
 
 **Technical Specifications:**
-- Logger must implement ILogger interface for dependency injection
-- Logger must support Info, Warning, and Error log levels
+- Logger must implement ILogger interface with structured logging support
+- Logger must support all severity levels: Trace, Debug, Info, Warning, Error
+- Logger must output structured JSON format for searchability
 - Logger must include UTC timestamps in all entries
-- Logger must output to console
-- Logger must handle exceptions with stack traces
+- Logger must handle exceptions with full stack traces
 - Logger must be registered as Singleton service
 - Logger must be injectable into other services
+- Logger must support context enrichment (correlation IDs, machine info, process info, thread info)
+- Production Mode: Console sink outputs errors only, rolling file sink captures warnings and errors
+- Diagnostic Mode: Single file sink with 6-hour retention window captures all levels (Trace through Error)
+- Development Mode: Console sink with all levels, rolling file backup
+- Correlation ID enricher must track operations across service boundaries
+- Structured properties must enable rich log queries and filtering
 
 **Implementation Components:**
-- ILogger interface
-- Logger implementation class
+- ILogger interface (expanded in v1.2.0 with Trace, Debug, structured methods)
+- Logger implementation class (maintained for backward compatibility, marked obsolete)
+- SerilogLoggerAdapter (new in v1.2.0, implements ILogger using Serilog)
+- SerilogConfiguration.cs (new in v1.2.0, environment-specific configurations)
+- CorrelationIdEnricher.cs (new in v1.2.0, distributed tracing support)
 - ServiceCollectionExtensions registration
 
 ### TR-4: Dependency Injection Container

@@ -1,129 +1,261 @@
 # MassifCentral - Project Requirements Document
 
 ## Version Control
-- **Version:** 1.0.0
+- **Version:** 1.1.0
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Initial project setup with core library and console application
+- **Change Summary:** Restructured requirements into 3 functional (business-level) and 7 technical (implementation) requirements. Reclassified FR-4 and FR-5 as Technical Requirements TR-6 and TR-7. Implemented dependency injection framework (Microsoft.Extensions.DependencyInjection). Added traceability matrix, user stories, acceptance criteria, and Non-Functional Requirements section.
 
 ---
 
 ## Project Overview
 
-MassifCentral is a .NET 10 console application designed with architecture for scalability and maintainability. The project provides a foundation for building extensible applications with shared, reusable code components.
+MassifCentral is a .NET 10 foundational framework that enables development teams to build scalable, maintainable console and service applications. The framework provides essential infrastructure including dependency injection, logging, entity management, and configuration management, allowing teams to focus on business logic rather than boilerplate code.
 
-## Functional Requirements
+---
 
-### FR-1: Console Application Entry Point
-**Business Importance:** High  
-**Scope:** The application must provide a working console entry point with graceful startup and shutdown.  
-**Use Cases:**
-- Users can execute the application from command line
-- The application logs startup and shutdown events
-- The application demonstrates integration with the shared library
-- Users can extend the application with custom business logic
+## Functional Requirements (Business-Level)
 
-**Specifications:**
-- Application must initialize successfully on startup
-- Application must display welcome message to the console
-- Application must handle errors gracefully without crashing
-- Application must log all major events (startup, shutdown, errors)
+### FR-1: Enable Rapid Application Development
+**Business Value:** High  
+**Goal:** Reduce time-to-market for new .NET applications by providing a pre-configured foundation with essential services.
 
-### FR-2: Shared Library for Code Reusability
-**Business Importance:** High  
-**Scope:** Provide a library project that centralizes common, reusable code used across applications.  
-**Use Cases:**
-- Console application uses shared models and utilities
-- Other applications (web, worker services) can reference the library
-- Teams can extend the library with domain-specific logic
-- Code duplication is minimized across projects
+**User Stories:**
+- As a developer, I want to start a new application without building infrastructure from scratch, so I can focus on business features
+- As a team lead, I want a consistent application structure across projects, so I can manage multiple applications efficiently
+- As a DevOps engineer, I want standardized logging and configuration across all applications, so I can manage operations at scale
 
-**Specifications:**
-- Library must expose base classes for domain entities
-- Library must provide utility functions for logging
-- Library must store application constants
+**Acceptance Criteria:**
+- New applications can be created using MassifCentral in less than 5 minutes
+- Developers can add custom business logic without modifying framework code
+- Framework updates don't break existing applications
+
+### FR-2: Support Application Extensibility
+**Business Value:** High  
+**Goal:** Enable teams to extend the framework with domain-specific functionality without modifying core code.
+
+**User Stories:**
+- As a developer, I want to add my own services to the application container, so I can integrate custom business logic
+- As an architect, I want to enforce architectural patterns across applications, so I maintain consistency
+- As a team, I want to share common code across projects, so I reduce duplication
+
+**Acceptance Criteria:**
+- Framework provides clear extension points for custom services
+- Extension mechanism supports dependency injection patterns
+- Multiple applications can reference the framework library without conflicts
+
+### FR-3: Provide Observability Into Application Behavior
+**Business Value:** Medium  
+**Goal:** Enable teams to observe, diagnose, and troubleshoot application issues through comprehensive logging and monitoring.
+
+**User Stories:**
+- As an operator, I want to see structured logs from the application, so I can diagnose issues
+- As a developer, I want to add logging to my code without coupling to logging implementation, so I can swap implementations later
+- As a support team, I want logs with timestamps and error context, so I can quickly identify issues
+
+**Acceptance Criteria:**
+- All application events are logged with appropriate context
+- Logs include timestamps for debugging time-sensitive issues
+- Exception information is captured with stack traces
+- Logging implementation can be changed without modifying application code
+
+---
+
+## Technical Requirements (Implementation Details)
+
+These technical requirements specify how the functional requirements are fulfilled through the framework's architecture and components.
+
+### TR-1: Console Application Infrastructure
+**Supports:** FR-1, FR-2, FR-5  
+**Implementation Status:** ✅ COMPLETED (v1.1.0)
+
+**Technical Specifications:**
+- Application must be executable from command line
+- Application must initialize all services before running business logic
+- Application must handle shutdown gracefully
+- Application must catch and log unhandled exceptions
+- Application must exit with appropriate status codes
+
+**Implementation Components:**
+- Program.cs entry point
+- Host.CreateDefaultBuilder configuration
+- Service collection setup
+
+### TR-2: Shared Library with Reusable Components
+**Supports:** FR-2, FR-4  
+**Implementation Status:** ✅ COMPLETED (v1.1.0)
+
+**Technical Specifications:**
+- Library must provide BaseEntity class for domain models
+- Library must provide constants for application-wide values
+- Library must be packagable as reusable assembly
+- Library must have minimal external dependencies
 - Library must be testable with unit tests
 
-### FR-3: Base Entity Model
-**Business Importance:** Medium  
-**Scope:** Provide an abstract base class for all domain entities.  
-**Use Cases:**
-- Developers create domain models by inheriting from BaseEntity
-- Entity tracking with consistent identifier scheme
-- Audit trails with creation and modification timestamps
-- Entity lifecycle management with active status flag
+**Implementation Components:**
+- MassifCentral.Lib project
+- Constants.cs (application identification)
+- Models/BaseEntity.cs (entity base class)
 
-**Specifications:**
-- BaseEntity must provide Guid-based unique identifier
-- BaseEntity must track creation timestamp in UTC
-- BaseEntity must track modification timestamp in UTC
-- BaseEntity must include active status property
+### TR-3: Abstraction-Based Logging Framework
+**Supports:** FR-3, FR-5  
+**Implementation Status:** ✅ COMPLETED (v1.1.0)
 
-### FR-4: Logging Utility
-**Business Importance:** Medium  
-**Scope:** Provide basic logging capability for application events.  
-**Use Cases:**
-- Applications log informational messages
-- Applications log warning conditions
-- Applications log error conditions with exception details
-- Logs include timestamps for debugging
-
-**Specifications:**
-- Logger must support Info, Warning, and Error levels
-- Logger must include UTC timestamp in all log entries
-- Logger must support logging exceptions with stack traces
+**Technical Specifications:**
+- Logger must implement ILogger interface for dependency injection
+- Logger must support Info, Warning, and Error log levels
+- Logger must include UTC timestamps in all entries
 - Logger must output to console
+- Logger must handle exceptions with stack traces
+- Logger must be registered as Singleton service
+- Logger must be injectable into other services
 
-### FR-5: Application Constants
-**Business Importance:** Low  
-**Scope:** Centralize application-wide constants.  
-**Use Cases:**
-- Consistent application identification across projects
-- Version tracking for deployment and debugging
-- Easy updates to global values without code changes
+**Implementation Components:**
+- ILogger interface
+- Logger implementation class
+- ServiceCollectionExtensions registration
 
-**Specifications:**
-- Constants must include application name
-- Constants must include application version
-- Constants must be accessible from all projects
+### TR-4: Dependency Injection Container
+**Supports:** FR-1, FR-2, FR-5  
+**Implementation Status:** ✅ COMPLETED (v1.1.0)
+
+**Technical Specifications:**
+- Application must use Microsoft.Extensions.DependencyInjection
+- Services must be registered in ServiceCollectionExtensions
+- Lifetimes must be explicitly specified (Transient, Scoped, Singleton)
+- DI container must be configured via Host.CreateDefaultBuilder
+- Service resolution must fail fast with clear error messages
+- All service registrations must be documented
+
+**Implementation Components:**
+- ServiceCollectionExtensions.cs
+- Program.cs Host configuration
+- Service registration patterns
+
+### TR-5: Test Infrastructure with Mocks
+**Supports:** FR-5, FR-3  
+**Implementation Status:** ✅ COMPLETED (v1.1.0)
+
+**Technical Specifications:**
+- MockLogger must implement ILogger interface
+- Mock implementations must capture method calls
+- Test framework must be xUnit
+- All tests must use Arrange-Act-Assert pattern
+- Tests must achieve >= 80% code coverage
+
+**Implementation Components:**
+- Mocks/MockLogger.cs
+- LoggerTests.cs
+- LibraryTests.cs
+
+### TR-6: Reusable Component Library
+**Supports:** FR-2, FR-3  
+**Implementation Status:** ✅ COMPLETED (v1.1.0)
+
+**Technical Specifications:**
+- Library must provide base classes for domain entities (BaseEntity)
+- Library must expose application constants
+- Library must be packagable as reusable NuGet assembly
+- Library must maintain backward compatibility across versions
+- Library must have no external dependencies beyond .NET
+
+**Implementation Components:**
+- MassifCentral.Lib project
+- Models/BaseEntity.cs (domain entity base class)
+- Constants.cs (application constants)
+
+### TR-7: Interface-Based Architecture with Dependency Injection
+**Supports:** FR-1, FR-2, FR-3  
+**Implementation Status:** ✅ COMPLETED (v1.1.0)
+
+**Technical Specifications:**
+- All service interfaces must be defined to enable dependency injection
+- All service implementations must be registered in ServiceCollectionExtensions
+- All public dependencies must be injected via constructor
+- Service lifetimes must be explicitly documented (Transient, Scoped, Singleton)
+- Loose coupling must enable easy substitution of implementations (e.g., for testing)
+
+**Implementation Components:**
+- ILogger interface and Logger implementation
+- ServiceCollectionExtensions service registration
+- DI container configuration in Program.cs
+
+---
 
 ## Non-Functional Requirements
 
 ### Performance
 - Application startup time must be under 2 seconds
-- Logging operations must not block main application thread
-- Library must support at least 1,000 concurrent operations in memory
+- Service resolution from DI container must be < 1ms per instance
+- Logging operations must not block application execution
+- Framework must support at least 1,000 concurrent operations in memory
 
 ### Scalability
-- Architecture must allow multiple independent applications to reference the shared library
-- Library must support domain model expansion without breaking existing code
-- Project structure must scale to support 10+ application projects
+- Framework must support 10+ independent applications built on it
+- DI container must handle 100+ registered services without degradation
+- Shared library must evolve without breaking dependent applications
+- Architecture must scale from single-application to multi-application deployments
 
 ### Maintainability
-- All code must include XML documentation comments
+- All public code must have XML documentation comments
 - Code must follow SOLID principles
 - Project structure must follow standard .NET conventions
-- All public APIs must be covered by unit tests
-
-### Security
-- Application must validate all user inputs (future requirement)
-- Exception messages must not expose sensitive information
-- Logging must not capture sensitive data (future enhancement)
+- All public API changes must be tracked in CHANGELOG
 
 ### Reliability
-- Application must handle and log all unhandled exceptions
-- All library components must have unit test coverage >= 80%
-- Build process must validate all tests pass before success
+- All unhandled exceptions must be logged before application exit
+- All library components must have >= 80% unit test coverage
+- All tests must pass before accepting code changes
+- DI configuration errors must provide clear diagnostic messages
 
-## Future Enhancements
+### Security
+- Sensitive information must not be logged
+- Exception messages must not expose internal system details
+- User input validation must be enforced (future requirement)
+- Secrets must not be stored in code (future requirement)
 
-- Configuration management system for application settings
-- Dependency injection container for loosely-coupled components
-- Database persistence layer for domain models
-- API service layer for external integrations
-- Advanced logging with multiple output targets
-- Entity validation framework
-- Repository pattern implementation
+---
+
+## Requirement Traceability
+
+| Functional Requirement | Technical Requirements | Primary Components |
+|------------------------|------------------------|-------------------|
+| FR-1: Rapid Development | TR-1, TR-4, TR-7 | Program.cs, ServiceCollectionExtensions, DI setup |
+| FR-2: Extensibility | TR-1, TR-4, TR-6, TR-7 | DI Container, Shared Library, Extension points |
+| FR-3: Observability | TR-3, TR-5, TR-7 | ILogger, Logger, MockLogger, Test infrastructure |
+
+---
+
+## Requirement Status Summary
+
+| Category | Total | Status |
+|----------|-------|--------|
+| **Functional Requirements (Business-Level)** | 3 | ✅ All satisfied |
+| **Technical Requirements (Implementation)** | 7 | ✅ All implemented |
+| **Non-Functional Requirements** | 5 | ✅ 4/5 met, 1 deferred |
+
+**Note:** Security requirement for user input validation deferred to Phase 2
+
+---
+
+## Future Enhancements (Phase 2+)
+
+These enhancements align with and support the functional requirements:
+
+- Configuration management system (supports FR-1: Rapid Development)
+- Database persistence layer (supports FR-2: Extensibility, TR-6: Reusable Components)
+- API/Web service layer (supports FR-1: Rapid Development, FR-2: Extensibility)
+- Advanced logging with file output (supports FR-3: Observability)
+- Entity validation framework (supports TR-6: Reusable Components)
+- Repository pattern implementation (supports FR-2: Extensibility, TR-7: Interface-Based Architecture)
+- Event-driven architecture with messaging (supports FR-2: Extensibility)
+- User input validation framework (supports Security NFR)
+
+---
 
 ## Related Documents
 
-- [Design Document](./DESIGN.md) - Architecture and component design
+- [Design Document](./DESIGN.md) - Technical architecture and patterns
+- [Dependency Injection Guide](./DEPENDENCY_INJECTION.md) - DI implementation details
+- [Implementation Summary v1.1.0](./IMPLEMENTATION_SUMMARY_v1.1.0.md) - Status of implementation
+- [Architecture Analysis](./ARCHITECTURE_ANALYSIS.md) - Architecture assessment
+- [CHANGELOG.md](../CHANGELOG.md) - Version history and release notes

@@ -1,9 +1,9 @@
 # MassifCentral - Design Document
 
 ## Version Control
-- **Version:** 1.0.0
+- **Version:** 1.1.0
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Initial architecture design and component specifications
+- **Change Summary:** Implemented Dependency Injection infrastructure with Microsoft.Extensions.DependencyInjection; refactored Logger to ILogger interface; added ServiceCollectionExtensions for service registration; updated Program.cs to use DI container
 
 ---
 
@@ -292,6 +292,251 @@ MassifCentral/
 - .NET 10 Runtime
 - No external dependencies (core functionality)
 - Cross-platform compatible (Windows, Linux, macOS)
+
+## Dependency Injection Strategy
+
+### Motivation for Dependency Injection
+
+Dependency Injection enables:
+- **Loose Coupling:** Components depend on abstractions, not concrete implementations
+- **Testability:** Easy to inject mock implementations for unit testing
+- **Flexibility:** Swap implementations without changing dependent code
+- **Maintainability:** Centralized object lifecycle management
+- **Scalability:** Scales well as codebase grows with multiple implementations
+
+### Recommended Library: Microsoft.Extensions.DependencyInjection
+
+**Selection Rationale:**
+- Official Microsoft library - built into ASP.NET Core ecosystem
+- Lightweight and performant - minimal overhead
+- Zero external dependencies - only depends on core .NET
+- Excellent console app support - works seamlessly with Microsoft.Extensions.Hosting
+- Familiar patterns - aligns with industry standards and ASP.NET Core conventions
+- Built-in lifetime management - Transient, Scoped, Singleton patterns
+- Great documentation and community support
+
+**Alternatives Considered:**
+
+| Library | Pros | Cons | Recommendation |
+|---------|------|------|-----------------|
+| Microsoft.Extensions.DependencyInjection | Official, lightweight, no dependencies | Limited advanced features | ✅ **Recommended** |
+| Autofac | Powerful, module system, diagnostics | Heavier, more complex | Consider if advanced features needed later |
+| SimpleInjector | Clean API, diagnostic abilities | Smaller community | Good lightweight alternative |
+| Ninject | Popular, flexible | Older, slower | Not recommended for new projects |
+| Castle Windsor | Enterprise-grade, mature | Complex setup, heavier | For large enterprise systems |
+
+### Library Acquisition
+
+Add the following NuGet packages to MassifCentral.Console and MassifCentral.Lib projects:
+
+**Command Line:**
+```bash
+dotnet add src/MassifCentral.Console package Microsoft.Extensions.DependencyInjection
+dotnet add src/MassifCentral.Console package Microsoft.Extensions.Hosting
+dotnet add src/MassifCentral.Lib package Microsoft.Extensions.DependencyInjection.Abstractions
+```
+
+**Or add to .csproj:**
+```xml
+<ItemGroup>
+  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+  <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+  <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+</ItemGroup>
+```
+
+### Setup Architecture
+
+```
+┌─────────────────────────────────────┐
+│   Console Application               │
+│   (MassifCentral.Console)           │
+│                                     │
+│   ┌──────────────────────────────┐  │
+│   │ ServiceCollection Setup      │  │
+│   │ - Register services          │  │
+│   │ - Register logging           │  │
+│   │ - Create provider            │  │
+│   └────────┬─────────────────────┘  │
+│            │                        │
+│            ▼                        │
+│   ┌──────────────────────────────┐  │
+│   │ IServiceProvider             │  │
+│   │ - Resolve dependencies       │  │
+│   │ - Manage lifetimes           │  │
+│   │ - Create instances           │  │
+│   └────────┬─────────────────────┘  │
+└────────────┼──────────────────────────┘
+             │
+             ▼
+         Dependent Services
+         (Logger, Repositories, etc.)
+```
+
+### Implementation Pattern
+
+**1. Create Service Registration Extension:**
+```csharp
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddApplicationServices(
+        this IServiceCollection services)
+    {
+        // Register abstracted Logger
+        services.AddSingleton<ILogger, Logger>();
+        
+        // Register repositories
+        services.AddScoped<IUserRepository, UserRepository>();
+        
+        // Register use cases
+        services.AddScoped<ICreateUserUseCase, CreateUserUseCase>();
+        
+        return services;
+    }
+}
+```
+
+**2. Configure in Program.cs:**
+```csharp
+var services = new ServiceCollection();
+services.AddApplicationServices();
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve and use services
+var logger = serviceProvider.GetRequiredService<ILogger>();
+var useCase = serviceProvider.GetRequiredService<ICreateUserUseCase>();
+```
+
+**3. With Microsoft.Extensions.Hosting (Recommended):**
+```csharp
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((context, services) =>
+    {
+        services.AddApplicationServices();
+        services.AddScoped<Application>();
+    })
+    .Build();
+
+var app = host.Services.GetRequiredService<Application>();
+await app.RunAsync();
+```
+
+### Lifetime Management
+
+**Transient (Stateless Services)**
+- New instance created each time
+- Use for: Stateless utilities, command handlers
+- Example: `LoggerFormatter`
+
+**Scoped (Request-level)**
+- New instance per scope/request
+- Use for: Database contexts, repositories, use cases
+- Example: `UserRepository`
+
+**Singleton (Application-level)**
+- Single instance for application lifetime
+- Use for: Configuration, logging, caches
+- Example: `ApplicationConfiguration`, `ILogger`
+
+### Refactoring Logger for DI
+
+**Current Static Approach:**
+```csharp
+Logger.LogInfo("message");  // Static, tightly coupled
+```
+
+**DI-Ready Interface:**
+```csharp
+public interface ILogger
+{
+    void LogInfo(string message);
+    void LogWarning(string message);
+    void LogError(string message);
+    void LogError(string message, Exception ex);
+}
+
+public class Logger : ILogger
+{
+    // Implementation moves here
+}
+```
+
+**Usage with DI:**
+```csharp
+public class MyService
+{
+    private readonly ILogger _logger;
+    
+    public MyService(ILogger logger)
+    {
+        _logger = logger;  // Injected, loosely coupled
+    }
+    
+    public void DoWork()
+    {
+        _logger.LogInfo("Starting work");
+    }
+}
+```
+
+### Testing with DI
+
+**Mock Logger for Tests:**
+```csharp
+public class MockLogger : ILogger
+{
+    public List<string> LoggedMessages { get; } = new();
+    
+    public void LogInfo(string message) => LoggedMessages.Add(message);
+    public void LogWarning(string message) => LoggedMessages.Add(message);
+    public void LogError(string message) => LoggedMessages.Add(message);
+    public void LogError(string message, Exception ex) => LoggedMessages.Add(message);
+}
+
+// In unit test
+[Fact]
+public void ServiceLogsInfoMessage()
+{
+    var mockLogger = new MockLogger();
+    var service = new MyService(mockLogger);
+    
+    service.DoWork();
+    
+    Assert.Contains("Starting work", mockLogger.LoggedMessages);
+}
+```
+
+### Implementation Roadmap
+
+**Phase 1: Foundation (Current)**
+- Add DI packages to projects
+- Create `ILogger` interface
+- Create `ServiceCollectionExtensions`
+- Update `Logger` class to implement `ILogger`
+
+**Phase 2: Refactor Console App**
+- Update `Program.cs` to use DI container
+- Inject `ILogger` instead of using static methods
+- Test with mock logger implementation
+
+**Phase 3: Expand Service Registration**
+- Create repository interfaces in Domain layer
+- Register repositories in DI container
+- Implement abstraction-based service layers
+
+**Phase 4: Advanced Patterns**
+- Factory patterns for complex object creation
+- Decorator patterns for cross-cutting concerns
+- Service locator patterns where appropriate
+
+### Best Practices
+
+1. **Depend on Abstractions:** Always inject interfaces, not concrete classes
+2. **Constructor Injection:** Prefer constructor injection for clarity and testability
+3. **Service Registration:** Register services at application startup, not runtime
+4. **Lifetime Correctness:** Choose appropriate lifetimes to avoid memory leaks
+5. **Avoid Service Locator:** Use constructor injection instead of requesting from container
+6. **Group Registration:** Use extension methods to organize service registration
 
 ## Future Architecture Evolution
 

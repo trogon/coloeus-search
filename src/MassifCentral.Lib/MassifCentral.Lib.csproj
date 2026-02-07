@@ -25,6 +25,24 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <PackageId>Trogon.MassifCentral.Lib</PackageId>
+    <Version>1.2.0</Version>
+    <Authors>Trogon Studios, Maciej Klemarczyk</Authors>
+    <Company>Trogon Studios</Company>
+    <Description>Shared library for MassifCentral with domain models and logging utilities.</Description>
+    <PackageTags>massifcentral;logging;serilog;dotnet</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See RELEASE_NOTES_v1.2.0.md for full details.</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/trogon/coloeus-search</RepositoryUrl>
+    <PackageProjectUrl>http://trogon.eu/project/trogon%252Fcoloeus-search</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\RELEASE_NOTES_v1.2.0.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

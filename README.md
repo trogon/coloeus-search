@@ -1,5 +1,8 @@
 # MassifCentral
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)
+
 A .NET 10 console application with a shared library for scalable development.
 
 ## Project Structure
@@ -58,6 +61,25 @@ dotnet run --project src/MassifCentral.Console
 dotnet test
 ```
 
+## NuGet Packages
+
+### Library
+
+Package: Trogon.MassifCentral.Lib
+
+```bash
+dotnet add package Trogon.MassifCentral.Lib
+```
+
+### Dotnet Tool
+
+Package: Trogon.MassifCentral
+Command: tmcfind
+
+```bash
+dotnet tool install -g Trogon.MassifCentral
+```
+
 ## Documentation
 
 - **[Requirements Document](docs/REQUIREMENTS.md)** - Comprehensive functional and non-functional requirements
@@ -70,4 +92,4 @@ dotnet test
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).

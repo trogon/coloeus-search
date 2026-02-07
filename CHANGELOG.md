@@ -61,6 +61,13 @@
   - SERILOG_IMPLEMENTATION_GUIDE.md - 6-phase implementation guide
   - SERILOG_QUICK_REFERENCE.md - Executive summary and quick start
 
+- **License**
+  - Added MIT LICENSE file
+
+- **Distribution**
+  - NuGet library packaged as Trogon.MassifCentral.Lib
+  - Dotnet tool packaged as Trogon.MassifCentral (command: tmcfind)
+
 ### Changed
 - **Program.cs Updates**
   - Serilog Log.Logger initialization before host creation

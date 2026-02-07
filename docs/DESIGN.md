@@ -1,9 +1,9 @@
 # MassifCentral - Design Document
 
 ## Version Control
-- **Version:** 1.2.0
+- **Version:** 1.2.1
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Implemented Serilog structured logging framework replacing simple console logger. Added SerilogConfiguration with environment-specific sink strategies (production/diagnostic/development modes). Created CorrelationIdEnricher for distributed tracing. Added SerilogLoggerAdapter implementing ILogger interface for backward compatibility. Expanded ILogger with Debug, Trace, and structured logging methods. Added comprehensive integration tests for Serilog sink configurations. Updated MockLogger to capture all log levels and provide helper methods for test assertions.
+- **Change Summary:** Added packaging and distribution details for NuGet library and dotnet tool.
 
 ---
 
@@ -87,6 +87,19 @@ MassifCentral/
 │
 ├── MassifCentral.slnx                    (Solution file)
 └── README.md                             (Project overview)
+```
+
+## Packaging and Distribution
+
+MassifCentral is distributed as a NuGet library and a dotnet tool.
+
+### Packages
+- **Library:** Trogon.MassifCentral.Lib
+- **Dotnet Tool:** Trogon.MassifCentral (command: tmcfind)
+
+### Build Packages
+```bash
+dotnet pack MassifCentral.slnx -c Release
 ```
 
 ## Component Design

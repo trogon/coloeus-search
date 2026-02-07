@@ -124,6 +124,13 @@ logger.LogError("Database query exceeded timeout", timeoutException);
 - **SERILOG_QUICK_REFERENCE.md** - Quick start and configuration reference
 - Updated **DESIGN.md** and **REQUIREMENTS.md** with Serilog specifics
 
+### Distribution
+- **NuGet Library:** Trogon.MassifCentral.Lib
+- **Dotnet Tool:** Trogon.MassifCentral (command: tmcfind)
+
+### Legal
+- **License:** MIT (see LICENSE)
+
 ---
 
 ## 🚀 Getting Started

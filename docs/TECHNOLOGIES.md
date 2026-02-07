@@ -1,15 +1,19 @@
 # MassifCentral - Technology Stack & Techniques Document
 
 ## Version Control
-- **Version:** 1.2.0
+- **Version:** 1.2.1
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Updated logging and DI stack details to reflect Serilog implementation
+- **Change Summary:** Added NuGet packaging details for library and dotnet tool distribution
 
 ---
 
 ## Executive Summary
 
 MassifCentral is built on a modern, enterprise-grade .NET 10 platform with a focus on maintainability, scalability, and clean architecture principles. The project utilizes contemporary development practices including unit testing, semantic versioning, and structured documentation.
+
+## License
+- **Type:** MIT
+- **File:** LICENSE
 
 ## Technology Stack
 
@@ -294,6 +298,21 @@ bin/
     ├── *.dll
     └── *.exe (on Windows)
 ```
+
+### NuGet Packaging
+
+#### Packages
+- **Library:** Trogon.MassifCentral.Lib
+- **Dotnet Tool:** Trogon.MassifCentral (command: tmcfind)
+
+#### Pack Command
+```bash
+dotnet pack MassifCentral.slnx -c Release
+```
+
+#### Package Contents
+- README.md included as the NuGet readme
+- RELEASE_NOTES_v1.2.0.md included for release notes
 
 ## Development Tools & Environment
 

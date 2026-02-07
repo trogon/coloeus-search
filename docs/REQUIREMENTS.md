@@ -1,9 +1,9 @@
 # MassifCentral - Project Requirements Document
 
 ## Version Control
-- **Version:** 1.2.0
+- **Version:** 1.2.1
 - **Last Updated:** 2026-02-07
-- **Change Summary:** Implemented Serilog structured logging framework with environment-specific sink configurations. Production mode: Console errors only + rolling file for warnings/errors. Diagnostic mode: Single file with 6-hour retention (all levels). Added correlation ID enrichment for distributed tracing. Added structured logging with properties for enhanced searchability and traceability. Expanded ILogger interface with Debug, Trace, and structured logging methods. Created SerilogLoggerAdapter maintaining backward compatibility.
+- **Change Summary:** Added dotnet tool functional requirement and updated packaging-related requirements.
 
 ---
 
@@ -57,6 +57,19 @@ MassifCentral is a .NET 10 foundational framework that enables development teams
 - Logs include timestamps for debugging time-sensitive issues
 - Exception information is captured with stack traces
 - Logging implementation can be changed without modifying application code
+
+### FR-4: Provide Dotnet Tool Access
+**Business Value:** Medium  
+**Goal:** Allow users to install and run the console app as a global or local dotnet tool.
+
+**User Stories:**
+- As a developer, I want to install the tool via `dotnet tool`, so I can run it without cloning the repository
+- As a CI engineer, I want to invoke the tool from scripts using the dotnet tool command line, so I can automate workflows
+
+**Acceptance Criteria:**
+- The console app is packaged as a dotnet tool
+- The tool can be installed using `dotnet tool install` from a NuGet feed
+- The tool can be executed from the command line after installation
 
 ---
 
@@ -165,7 +178,7 @@ These technical requirements specify how the functional requirements are fulfill
 - Library must expose application constants
 - Library must be packagable as reusable NuGet assembly
 - Library must maintain backward compatibility across versions
-- Library must have no external dependencies beyond .NET
+- Library dependencies must be documented and limited to approved NuGet packages
 
 **Implementation Components:**
 - MassifCentral.Lib project
